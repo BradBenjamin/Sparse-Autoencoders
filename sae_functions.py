@@ -10,9 +10,8 @@ import matplotlib.pyplot as plt
 from IPython.display import HTML, display # If using Jupyter/Colab
 import numpy as np
    
-def sae_dashboard_analysis_2(model, sae, query, device,feature_title_dict, top_k=3):
-
-
+def sae_dashboard_analysis_2(model, sae, query, device,feature_title_dict, top_k):
+    top_k+=1
     print("Updated sae_dashboard_analysis_2 called with query:", query)
     # 1. Convert the input query to tokens and string tokens (for display)
     tokens = model.to_tokens(query).to(device)
@@ -42,6 +41,9 @@ def sae_dashboard_analysis_2(model, sae, query, device,feature_title_dict, top_k
     html_content = f"<h3 style='margin-bottom: 10px; color: #ddd;'>Top {top_k} Features Firing for this Prompt</h3>"
 
     for max_val, feature_idx in zip(top_feature_values, top_feature_indices):
+        #Skip the first one since it's usually the same "most activating feature" that just captures overall activation magnitude rather than a specific interpretable feature
+        if feature_idx == top_feature_indices[0]:
+            continue
         feature_idx = feature_idx.item()
         max_val = max_val.item()
         
@@ -109,10 +111,6 @@ def generate_feature_titles(model, sae, device):
 
     return feature_titles
 
-
-
-import matplotlib.pyplot as plt
-
 def analyze_feature_globally_gradio(model, sae, feature_idx, dataset_texts, device, top_contexts_k=5):
     # --- 1. LOGIT LENS ---
     feature_dir = sae.W_dec[feature_idx].to(device).to(model.W_U.dtype)
@@ -128,6 +126,7 @@ def analyze_feature_globally_gradio(model, sae, feature_idx, dataset_texts, devi
     import torch
     with torch.no_grad():
         for i, text in enumerate(dataset_texts):
+            print(f"Processing text {i+1}/{len(dataset_texts)}", end='\r')
             tokens = model.to_tokens(text).to(device)
             str_tokens = model.to_str_tokens(text)[1:] 
             _, cache = model.run_with_cache(tokens, names_filter=[hook_name])
@@ -169,3 +168,12 @@ def analyze_feature_globally_gradio(model, sae, feature_idx, dataset_texts, devi
         html_content += "</div>"
 
     return fig, html_content
+
+def get_steering_hook(sae, feature_id, coefficient, device):
+    steering_vec = sae.W_dec[int(feature_id)].to(device)
+    steering_vec = steering_vec / (steering_vec.norm() + 1e-8) #normalized
+    
+    def hook_fn(resid_pre, hook):
+        return resid_pre + (coefficient * steering_vec)
+        
+    return hook_fn
