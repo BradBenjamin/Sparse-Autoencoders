@@ -1,0 +1,4 @@
+Future Features:
+
+1. For each feature, run a huge chunk of text to see activations.
+2. Title for each feature?

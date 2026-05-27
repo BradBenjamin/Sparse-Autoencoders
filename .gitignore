@@ -82,8 +82,6 @@ checkpoints/
 model_training/checkpoints/
 model_training/wandb/
 
-*/huggingface/
-
 bussman_training/wandb/
 bussman_training/checkpoints/
 
