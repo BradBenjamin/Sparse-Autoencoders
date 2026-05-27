@@ -83,3 +83,9 @@ model_training/checkpoints/
 model_training/wandb/
 
 */huggingface/
+
+bussman_training/wandb/
+bussman_training/checkpoints/
+
+bussman_training/training_logs.txt
+model_training/huggingface/
